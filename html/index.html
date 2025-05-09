@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <title>Workbench UI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        .glass {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .glow-btn {
+            background: linear-gradient(90deg, #7fff94, #adffb3);
+            box-shadow: 0 0 15px #7fff94;
+            color: #000;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            padding: 12px 24px;
+        }
+        
+        .glow-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px #00ffae;
+            background: linear-gradient(90deg, #00ffae, #66ffcc);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8) translateY(10px);
+            }
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.4s ease-out forwards !important;
+        }
+        
+        .rarity-common {
+            color: #cccccc;
+        }
+        
+        .rarity-uncommon {
+            color: #00ffae;
+            text-shadow: 0 0 10px #00ffae;
+        }
+        
+        .rarity-rare {
+            color: #3b82f6;
+            text-shadow: 0 0 10px #3b82f6;
+        }
+        
+        .rarity-epic {
+            color: #a855f7;
+            text-shadow: 0 0 15px #a855f7;
+        }
+        
+        .rarity-legendary {
+            color: #f59e0b;
+            text-shadow: 0 0 20px #f59e0b;
+        }
+        
+        .progress-ring {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 6px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #00ffae;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .animated-item {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .xp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffae, #30ffb3, #66ffcc);
+            animation: pulseGlow 2s infinite ease-in-out;
+            box-shadow: 0 0 10px #00ffae, 0 0 15px #00ffae;
+            transition: width 0.3s ease;
+        }
+        
+        @keyframes pulseGlow {
+            0%,
+            100% {
+                box-shadow: 0 0 8px #00ffae, 0 0 15px #00ffae;
+            }
+            50% {
+                box-shadow: 0 0 20px #00ffae, 0 0 30px #00ffae;
+            }
+        }
+        
+        .xp-bar-label {
+            background: #1f2937;
+            color: #00ffae;
+            border: 1px solid #00ffae;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            box-shadow: 0 0 10px #00ffae44;
+        }
+        
+        .xp-bar-count {
+            font-size: 0.75rem;
+            color: #d1d5db;
+            letter-spacing: 0.05em;
+            margin-top: 0.5rem;
+        }
+        
+        .level-display {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #7fff94;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 8px #00ffae;
+            transition: transform 0.3s ease, text-shadow 0.3s ease;
+        }
+        
+        #recipeList {
+            height: 320px;
+            overflow-y: auto;
+        }
+        
+        .workbench-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            height: 100%;
+        }
+        
+        #recipeList {
+            overflow-y: auto;
+        }
+        
+        .recipe-item {
+            min-height: 80px;
+        }
+        
+        #recipeList::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #recipeList::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 3px;
+        }
+        
+        #recipeList::-webkit-scrollbar-thumb:hover {
+            background: #888;
+        }
+        
+        #categoryFilter {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border: 1px solid #4a5568;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        #categoryFilter:focus {
+            outline: none;
+            border-color: #38b2ac;
+            box-shadow: 0 0 0 3px rgba(56, 178, 172, 0.4);
+        }
+        
+        #craftingTimerRow .progress-bar {
+            transition: width 1s linear;
+        }
+        
+        #craftingTimerContainer h4 {
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: bold;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+
+<body id="nuiRoot" class="hidden text-white">
+    <div class="h-screen w-screen flex items-center justify-center px-6 py-10">
+        <div class="flex w-full max-w-7xl h-[100%] bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+            <!-- Left Panel -->
+            <div class="w-1/2 bg-black/50 p-8 overflow-y-auto space-y-6 relative">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-3xl font-bold text-lime-300">WORKBENCH</h2>
+                        <p id="recipeCount" class="text-sm text-gray-400">0 CRAFTABLE ITEMS</p>
+                    </div>
+                </div>
+
+                <!-- Category Filter and Item Search Section -->
+                <div class="mb-6 flex items-center space-x-4">
+                    <div class="flex-1">
+                        <label for="categoryFilter" class="block text-sm text-gray-300 font-semibold mb-2">Filter by Category</label>
+                        <select id="categoryFilter" class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <option value="all">All</option>
+                            <option value="weapons">Weapons</option>
+                            <option value="healing">Healing</option>
+                            <option value="tools">Tools</option>
+                            <option value="drugs">Drugs</option>
+                        </select>
+                    </div>
+
+                    <div class="flex-1">
+                        <label for="itemSearch" class="block text-sm text-gray-300 font-semibold mb-2">Search for Item</label>
+                        <input type="text" id="itemSearch" class="w-full px-4 py-2 bg-gray-800 text-white rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Search for an item..." />
+                    </div>
+                </div>
+
+
+
+                <div id="recipeList" class="space-y-4">
+                    <!-- Recipes dynamically loaded here -->
+                </div>
+
+                <!-- XP BAR -->
+                <div class="w-full flex flex-col items-center mt-6">
+                    <div class="xp-bar-text level-display">Level 0</div>
+                    <div class="w-full h-2 bg-gray-700 rounded overflow-hidden relative">
+                        <div class="xp-bar-fill absolute top-0 left-0 h-2 bg-green-500 rounded" style="width: 0%;"></div>
+                    </div>
+                    <span class="xp-bar-count text-xs text-gray-300 mt-2 tracking-wide">0 / 15 XP</span>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="flex-1 p-10 bg-black/40 flex flex-col justify-center items-center relative">
+                <button onclick="closeUI()" class="text-white bg-red-600 hover:bg-red-700 transition px-3 py-1 rounded text-lg absolute top-4 right-4 z-10">✖</button>
+
+                <div class="text-center fade-in animated-item" id="selectedItem" style="display: none;">
+                    <div class="flex flex-col items-center space-y-4 mb-4">
+                        <img id="itemImage" src="" class="w-32 h-32 rounded object-cover" style="border: none; box-shadow: none; background: transparent;" />
+                        <div>
+                            <div id="itemTag" class="text-sm font-bold"></div>
+                            <h3 id="itemName" class="text-3xl font-bold text-lime-300"></h3>
+                        </div>
+                    </div>
+                    <p id="itemDescription" class="text-gray-300 text-sm mb-4 text-center">Item description here...</p>
+                    <div id="itemRequirements" class="flex justify-center flex-wrap gap-2 text-sm mb-4">
+                        <!-- Ingredient tags -->
+                    </div>
+                    <button onclick="startCraft()" class="glow-btn px-8 py-2 rounded text-lg">Craft</button>
+                </div>
+
+                <!-- Crafting Queue -->
+                <div id="craftingTimerContainer" class="fade-in mt-6 hidden">
+                    <div class="flex justify-center w-full">
+                        <h4 class="text-sm text-lime-300 mb-2">ACTIVE CRAFTS</h4>
+                    </div>
+                    <div id="craftingTimerRow" class="flex gap-6">
+                        <!-- Active crafting items will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- <audio id="craftCompleteSound" src="success.mp3" preload="auto"></audio> -->
+
+    <script src="script.js"></script>
+</body>
+
+</html>
