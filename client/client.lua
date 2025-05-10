@@ -9,7 +9,8 @@ RegisterCommand("openCrafting", function()
     SendNUIMessage({
         action = "open",
         recipes = recipes,
-        recipeCount = recipeCount
+        recipeCount = recipeCount,
+        options = Config.Options,
     })
 
     SetNuiFocus(true, true)
@@ -37,4 +38,21 @@ AddEventHandler("tx_crafting:sendXPToNUI", function(xp)
         xp = xp
     })
 end)
+
+RegisterNetEvent("tx_crafting:levelUp")
+AddEventHandler("tx_crafting:levelUp", function(newLevel)
+    SendNUIMessage({
+        action = "notify",
+        message = "Congratulations! You reached level " .. newLevel,
+    })
+end)
+
+RegisterNetEvent("tx_crafting:craftingComplete")
+AddEventHandler("tx_crafting:craftingComplete", function(item)
+    SendNUIMessage({
+        action = "notify",
+        message = "Crafting of " .. item .. " is complete!",
+    })
+end)
+
 

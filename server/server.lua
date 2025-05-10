@@ -15,14 +15,28 @@ AddEventHandler("tx_crafting:craftItem", function(itemKey)
     end
 
     local item = itemKey
-    local xpGain = Config.Recipes[item].xpGain or 5
+    local xpGain = Config.Recipes[item].xpGain or Config.Options.standardXp
 
-    exports.oxmysql:execute(
-        'INSERT INTO tx_crafting (identifier, xp) VALUES (@identifier, @xp) ON DUPLICATE KEY UPDATE xp = xp + @xp',
-        { ['@identifier'] = user_id, ['@xp'] = xpGain }
-    )
-    print("Player " .. tostring(user_id) .. " crafted item " .. item .. " and gained " .. tostring(xpGain) .. " XP.")
+    exports.oxmysql:execute('SELECT xp FROM tx_crafting WHERE identifier = @identifier', {
+        ['@identifier'] = user_id
+    }, function(result)
+        local xp = result[1] and result[1].xp or 0
+        local playerLevel = math.floor(xp / Config.Options.nextLevel)
+        
+        if playerLevel >= Config.Options.maxLevel then
+            print("Player " .. tostring(user_id) .. " has reached max level and cannot gain more XP.")
+            return
+        end
+
+        exports.oxmysql:execute(
+            'INSERT INTO tx_crafting (identifier, xp) VALUES (@identifier, @xp) ON DUPLICATE KEY UPDATE xp = xp + @xp',
+            { ['@identifier'] = user_id, ['@xp'] = xpGain }
+        )
+        TriggerClientEvent("tx_crafting:craftingComplete", src, item)
+        print("Player " .. tostring(user_id) .. " crafted item " .. item .. " and gained " .. tostring(xpGain) .. " XP.")
+    end)
 end)
+
 
 RegisterNetEvent("tx_crafting:getXP")
 AddEventHandler("tx_crafting:getXP", function()

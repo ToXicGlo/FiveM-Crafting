@@ -4,99 +4,92 @@ let selectedItemKey = null;
 let activeCrafts = [];
 let maxConcurrentCrafts = 3;
 let previousXP = 0;
+let playerLevel = 0;
+let nextLevelXP = 0;
+let maxLevel = 0;
+let useNotification = true;
 const craftIntervals = {};
 
 // Event listeners
-window.addEventListener("message", function(event) {
+window.addEventListener("message", (event) => {
     const data = event.data;
 
-    if (data.action === "open") {
-        allRecipes = data.recipes;
-        document.body.classList.remove("hidden");
-        document.querySelector("#recipeCount").innerText = `${data.recipeCount} CRAFTABLE ITEMS`;
-        renderRecipeList();
-        fetch(`https://${GetParentResourceName()}/getXP`, { method: "POST" });
-    }
-
-    if (data.action === "receiveXP") {
-        updateXPDisplay(data.xp);
+    switch (data.action) {
+        case "open":
+            handleOpenAction(data);
+            break;
+        case "receiveXP":
+            updateXPDisplay(data.xp);
+            break;
     }
 });
 
-document.getElementById('categoryFilter').addEventListener('change', function() {
-    const category = this.value;
-    renderRecipeList(category);
+document.getElementById('categoryFilter').addEventListener('change', () => {
+    const category = document.getElementById('categoryFilter').value;
+    const searchQuery = document.getElementById('itemSearch').value.toLowerCase();
+    renderRecipeList(category, searchQuery);
 });
 
-// XP display functions
-function updateXPDisplay(xp) {
-    const nextLevelXP = 50;
-    const level = Math.floor(xp / nextLevelXP);
-    const currentXP = xp % nextLevelXP;
+document.getElementById('itemSearch').addEventListener('input', () => {
+    const searchQuery = document.getElementById('itemSearch').value.toLowerCase();
+    const category = document.getElementById('categoryFilter').value;
+    renderRecipeList(category, searchQuery);
+});
 
-    document.querySelector(".xp-bar-text").innerText = `Level ${level}`;
-    document.querySelector(".xp-bar-count").innerText = `${currentXP} / ${nextLevelXP} XP`;
 
-    const bar = document.querySelector(".xp-bar-fill");
-    if (bar) {
-        const width = (currentXP / nextLevelXP) * 100;
-        bar.style.setProperty("width", `${width}%`, "important");
-    } else {
-        console.error("XP bar element not found!");
-    }
+// Handle "open" action
+function handleOpenAction(data) {
+    allRecipes = data.recipes;
+    nextLevelXP = data.options.nextLevel;
+    maxLevel = data.options.maxLevel;
+    useNotification = data.options.useNotification;
 
-    previousXP = xp;
+    document.body.classList.remove("hidden");
+    document.querySelector("#recipeCount").innerText = `${data.recipeCount} CRAFTABLE ITEMS`;
+
+    renderRecipeList();
+    fetch(`https://${GetParentResourceName()}/getXP`, { method: "POST" });
 }
 
-document.getElementById('categoryFilter').addEventListener('change', function() {
-    const category = this.value;
-    renderRecipeList(category, document.getElementById('itemSearch').value);
-});
 
-document.getElementById('itemSearch').addEventListener('input', function() {
-    const searchQuery = this.value.toLowerCase();
-    renderRecipeList(document.getElementById('categoryFilter').value, searchQuery);
-});
-
-
+// Render the recipe list
 function renderRecipeList(category = 'all', searchQuery = '') {
     const container = document.getElementById("recipeList");
     container.innerHTML = "";
 
     Object.entries(allRecipes).forEach(([key, recipe]) => {
         if (category !== 'all' && recipe.category !== category) return;
+        if (!recipe.label.toLowerCase().includes(searchQuery)) return;
 
-        if (recipe.label.toLowerCase().includes(searchQuery)) {
-            const rarity = recipe.rarity || 'common';
-            const rarityLabel = rarity.toUpperCase();
+        const rarity = recipe.rarity || 'common';
+        const rarityLabel = rarity.toUpperCase();
 
-            const el = document.createElement("div");
-            el.className = "flex items-center justify-between bg-gray-800 px-4 py-3 rounded-lg hover:bg-gray-700 transition cursor-pointer shadow-md animated-item";
-            el.onclick = () => selectRecipe(key);
+        const el = document.createElement("div");
+        el.className = "flex items-center justify-between bg-gray-800 px-4 py-3 rounded-lg hover:bg-gray-700 transition cursor-pointer shadow-md animated-item";
+        el.onclick = () => selectRecipe(key);
 
-            el.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <img src="images/${key}.png" class="w-12 h-12 rounded object-cover" alt="${recipe.label}" />
-                    <div>
-                        <div class="text-lg font-bold text-lime-300">${recipe.label}</div>
-                    </div>
+        el.innerHTML = `
+            <div class="flex items-center gap-4">
+                <img src="images/${key}.png" class="w-12 h-12 rounded object-cover" alt="${recipe.label}" />
+                <div>
+                    <div class="text-lg font-bold text-lime-300">${recipe.label}</div>
                 </div>
-                <div class="text-sm px-3 py-1 rounded rarity-${rarity}">${rarityLabel}</div>
-            `;
+            </div>
+            <div class="text-sm px-3 py-1 rounded rarity-${rarity}">${rarityLabel}</div>
+        `;
 
-            container.appendChild(el);
-        }
+        container.appendChild(el);
     });
 }
 
-
+// Select a recipe
 function selectRecipe(key) {
     selectedItemKey = key;
     const recipe = allRecipes[key];
     const rarity = recipe.rarity || 'common';
 
     const selectedItem = document.getElementById("selectedItem");
-    selectedItem.style.display = "block ";
+    selectedItem.style.display = "block";
     selectedItem.classList.remove("animated-item");
     void selectedItem.offsetWidth; // Force reflow
     selectedItem.classList.add("animated-item");
@@ -122,14 +115,32 @@ function selectRecipe(key) {
             <i class="fas fa-clock"></i> ${timeInSeconds}s
         </span>
     `;
+
+    updateCraftButton(recipe.requiredLevel);
 }
 
-// Start crafting
+// Update the craft button based on the player's level
+function updateCraftButton(requiredLevel) {
+    const craftButton = document.querySelector("button[onclick='startCraft()']");
+    if (!craftButton) return;
+
+    if (requiredLevel > playerLevel) {
+        craftButton.disabled = true;
+        craftButton.innerText = `Requires Level ${requiredLevel}`;
+    } else {
+        craftButton.disabled = false;
+        craftButton.innerText = "Craft";
+    }
+}
+
+
+
+// Start crafting an item
 function startCraft() {
     if (!selectedItemKey) return;
 
     if (activeCrafts.length >= maxConcurrentCrafts) {
-        showCraftLimitNotification();
+        showNotification(`You can't craft more than ${maxConcurrentCrafts} items at a time!`, 5000, "red");
         return;
     }
 
@@ -140,7 +151,7 @@ function startCraft() {
     activeCrafts.push(craft);
     renderCraftingTimers();
 
-    let interval = setInterval(() => {
+    const interval = setInterval(() => {
         craft.remaining--;
 
         const timerText = document.getElementById(`craft-timer-${craft.id}`);
@@ -153,7 +164,7 @@ function startCraft() {
         }
 
         if (craft.remaining <= 0) {
-            clearInterval(interval);  // Clear the interval when crafting is done
+            clearInterval(interval);
             completeCraft(craft.id);
             fetch(`https://${GetParentResourceName()}/craftItem`, {
                 method: "POST",
@@ -166,18 +177,7 @@ function startCraft() {
     craftIntervals[craft.id] = interval;
 }
 
-
-function playCraftCompleteSound() {
-    const sound = document.getElementById("craftCompleteSound");
-    if (sound && sound.src) {
-        sound.play().catch(err => {
-            console.error("Error playing the sound: ", err);
-        });
-    } else {
-        console.error("Audio source is not defined correctly.");
-    }
-}
-
+// Complete crafting an item
 function completeCraft(id) {
     const element = document.querySelector(`[data-id="${id}"]`);
     if (element) {
@@ -191,6 +191,7 @@ function completeCraft(id) {
                 document.getElementById("craftingTimerContainer").classList.add("hidden");
             }
 
+            showNotification(`Crafting Complete!`, 5000, "green");
             playCraftCompleteSound();
             fetch(`https://${GetParentResourceName()}/getXP`, { method: "POST" });
         }, 400);
@@ -198,6 +199,7 @@ function completeCraft(id) {
 }
 
 
+// Cancel crafting an item
 function cancelCraft(id) {
     if (craftIntervals[id]) {
         clearInterval(craftIntervals[id]);
@@ -215,8 +217,7 @@ function cancelCraft(id) {
     }
 }
 
-
-
+// Crafting timers
 function renderCraftingTimers() {
     const container = document.getElementById("craftingTimerRow");
     const wrapper = document.getElementById("craftingTimerContainer");
@@ -292,6 +293,23 @@ function renderCraftingTimers() {
     });
 }
 
+// Update XP display
+function updateXPDisplay(xp) {
+    playerLevel = Math.floor(xp / nextLevelXP);
+    const currentXP = xp % nextLevelXP;
+
+    if (playerLevel >= maxLevel) {
+        document.querySelector(".xp-bar-text").innerText = `Level ${maxLevel}`;
+        document.querySelector(".xp-bar-count").innerText = `Max Level Reached`;
+        document.querySelector(".xp-bar-fill").style.width = "100%";
+        return;
+    }
+
+    document.querySelector(".xp-bar-text").innerText = `Level ${playerLevel}`;
+    document.querySelector(".xp-bar-count").innerText = `${currentXP} / ${nextLevelXP} XP`;
+    document.querySelector(".xp-bar-fill").style.width = `${(currentXP / nextLevelXP) * 100}%`;
+}
+
 // Utility functions
 function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
@@ -299,6 +317,17 @@ function formatTime(seconds) {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
+// Play crafting complete sound
+function playCraftCompleteSound() {
+    const sound = document.getElementById("craftCompleteSound");
+    if (sound && sound.src) {
+        sound.play().catch(err => console.error("Error playing the sound:", err));
+    } else {
+        console.error("Audio source is not defined correctly.");
+    }
+}
+
+// Close the UI
 function closeUI() {
     fetch(`https://${GetParentResourceName()}/close`, { method: "POST" });
     document.body.classList.add("hidden");
@@ -306,4 +335,23 @@ function closeUI() {
     renderCraftingTimers();
     document.getElementById("selectedItem").style.display = "none";
     selectedItemKey = null;
+}
+
+// Show notification
+function showNotification(message, duration = 3000, color = "green") {
+    if (!useNotification) return;
+
+    const notification = document.getElementById("notification");
+    const notificationMessage = document.getElementById("notificationMessage");
+
+    notificationMessage.innerText = message;
+
+    notification.classList.remove("bg-green-500", "bg-red-500", "bg-blue-500");
+    notification.classList.add(`bg-${color}-500`);
+
+    notification.classList.remove("hidden", "fade-out");
+    notification.classList.add("notification-fade-in");
+
+    setTimeout(() => notification.classList.add("fade-out"), duration - 500);
+    setTimeout(() => notification.classList.add("hidden"), duration);
 }

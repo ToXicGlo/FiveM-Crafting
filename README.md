@@ -12,7 +12,9 @@ Workbench UI is a dynamic and interactive crafting interface. This project provi
 - **Items Categorization**: Items are grouped by resource type (e.g., weapons, healing, tools.) for easier navigation.
 - **Responsive Design**: Fully responsive, ensuring the UI is optimized for different screen resolutions
 - **Interactive Elements**: Smooth animations for crafting progress tasks.
-
-## In production / Todo
 - **Level Required Crafts**: Unlock more unique craft recipes based on your crafting level.
 - **Notification System**: Notifications when a crafting task is completed, a new level is reached, or when new recipes become available.
+
+## In production / Todo
+- **Framework Compatible**: Compatible with vRP, ESX & QBCore framework for the inventory part
+- **Security Improvement**: Improve the resource events security, to prevent abusing

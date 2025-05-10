@@ -37,28 +37,6 @@
             animation: fadeIn 0.5s ease-in-out;
         }
         
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        
-        @keyframes fadeOut {
-            0% {
-                opacity: 1;
-                transform: scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: scale(0.8) translateY(10px);
-            }
-        }
-        
         .fade-out {
             animation: fadeOut 0.4s ease-out forwards !important;
         }
@@ -96,12 +74,6 @@
             animation: spin 1s linear infinite;
         }
         
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        
         .animated-item {
             animation: fadeIn 0.3s ease-out;
         }
@@ -112,16 +84,6 @@
             animation: pulseGlow 2s infinite ease-in-out;
             box-shadow: 0 0 10px #00ffae, 0 0 15px #00ffae;
             transition: width 0.3s ease;
-        }
-        
-        @keyframes pulseGlow {
-            0%,
-            100% {
-                box-shadow: 0 0 8px #00ffae, 0 0 15px #00ffae;
-            }
-            50% {
-                box-shadow: 0 0 20px #00ffae, 0 0 30px #00ffae;
-            }
         }
         
         .xp-bar-label {
@@ -152,9 +114,8 @@
             transition: transform 0.3s ease, text-shadow 0.3s ease;
         }
         
-        #recipeList {
-            height: 320px;
-            overflow-y: auto;
+        .recipe-item {
+            min-height: 80px;
         }
         
         .workbench-container {
@@ -165,11 +126,8 @@
         }
         
         #recipeList {
+            height: 320px;
             overflow-y: auto;
-        }
-        
-        .recipe-item {
-            min-height: 80px;
         }
         
         #recipeList::-webkit-scrollbar {
@@ -211,12 +169,68 @@
             text-align: center;
             margin-bottom: 16px;
         }
+        
+        #notification {
+            padding: 6px 18px;
+            font-size: 0.875rem;
+            width: auto;
+            max-width: 350px;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        #notification.fade-out {
+            animation: fadeOut 0.5s ease-in forwards;
+        }
+        
+        button[disabled] {
+            background-color: #e2e8f0;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8) translateY(10px);
+            }
+        }
+        
+        @keyframes pulseGlow {
+            0%,
+            100% {
+                box-shadow: 0 0 8px #00ffae, 0 0 15px #00ffae;
+            }
+            50% {
+                box-shadow: 0 0 20px #00ffae, 0 0 30px #00ffae;
+            }
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 
 <body id="nuiRoot" class="hidden text-white">
     <div class="h-screen w-screen flex items-center justify-center px-6 py-10">
-        <div class="flex w-full max-w-7xl h-[100%] bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+        <div class="flex w-full max-w-7xl h-[100vh] bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
             <!-- Left Panel -->
             <div class="w-1/2 bg-black/50 p-8 overflow-y-auto space-y-6 relative">
                 <div class="flex justify-between items-center mb-4">
@@ -245,8 +259,6 @@
                     </div>
                 </div>
 
-
-
                 <div id="recipeList" class="space-y-4">
                     <!-- Recipes dynamically loaded here -->
                 </div>
@@ -264,20 +276,23 @@
             <!-- Right Panel -->
             <div class="flex-1 p-10 bg-black/40 flex flex-col justify-center items-center relative">
                 <button onclick="closeUI()" class="text-white bg-red-600 hover:bg-red-700 transition px-3 py-1 rounded text-lg absolute top-4 right-4 z-10">✖</button>
+                <div id="notification" class="hidden absolute bottom-4 right-4 p-2.5 text-sm bg-green-500 text-white rounded-lg shadow-lg notification-fade-in">
+                    <p id="notificationMessage"></p>
+                </div>
 
                 <div class="text-center fade-in animated-item" id="selectedItem" style="display: none;">
                     <div class="flex flex-col items-center space-y-4 mb-4">
-                        <img id="itemImage" src="" class="w-32 h-32 rounded object-cover" style="border: none; box-shadow: none; background: transparent;" />
+                        <img id="itemImage" src="" class="w-40 h-40 rounded object-cover" style="border: none; box-shadow: none; background: transparent;" />
                         <div>
-                            <div id="itemTag" class="text-sm font-bold"></div>
-                            <h3 id="itemName" class="text-3xl font-bold text-lime-300"></h3>
+                            <div id="itemTag" class="text-lg font-bold"></div>
+                            <h3 id="itemName" class="text-xl font-bold text-lime-300"></h3>
                         </div>
                     </div>
-                    <p id="itemDescription" class="text-gray-300 text-sm mb-4 text-center">Item description here...</p>
-                    <div id="itemRequirements" class="flex justify-center flex-wrap gap-2 text-sm mb-4">
+                    <p id="itemDescription" class="text-gray-300 text-base mb-4 text-center">Item description here...</p>
+                    <div id="itemRequirements" class="flex justify-center flex-wrap gap-3 text-base mb-4">
                         <!-- Ingredient tags -->
                     </div>
-                    <button onclick="startCraft()" class="glow-btn px-8 py-2 rounded text-lg">Craft</button>
+                    <button onclick="startCraft()" class="glow-btn px-10 py-3 rounded text-xl">Craft</button>
                 </div>
 
                 <!-- Crafting Queue -->
@@ -292,8 +307,6 @@
             </div>
         </div>
     </div>
-
-    <!-- <audio id="craftCompleteSound" src="success.mp3" preload="auto"></audio> -->
 
     <script src="script.js"></script>
 </body>
